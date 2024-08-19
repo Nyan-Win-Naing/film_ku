@@ -1,4 +1,5 @@
 // Stateless
+import 'package:film_ku/pages/movie_detail_page.dart';
 import 'package:film_ku/resources/colors.dart';
 import 'package:film_ku/resources/dummy_data.dart';
 import 'package:film_ku/viewitems/movie_view.dart';
@@ -118,7 +119,16 @@ class HorizontalMovieListView extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         itemCount: 10,
         itemBuilder: (context, index) {
-          return MovieView();
+          return MovieView(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MovieDetailPage(),
+                ),
+              );
+            },
+          );
         },
         separatorBuilder: (context, index) {
           return SizedBox(width: 16);
