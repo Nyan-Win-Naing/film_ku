@@ -1,4 +1,5 @@
 import 'package:film_ku/resources/colors.dart';
+import 'package:film_ku/viewitems/cast_view.dart';
 import 'package:film_ku/viewitems/genre_view.dart';
 import 'package:film_ku/widgets/movie_detail_sliver_app_bar_view.dart';
 import 'package:flutter/material.dart';
@@ -24,34 +25,104 @@ class MovieDetailPage extends StatelessWidget {
                 SizedBox(height: 24),
                 GenreAndDurationSectionView(),
                 SizedBox(height: 30),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Story Line",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      Text(
-                        "For the first time in the cinematic history of Spider-Man, our friendly neighborhood hero's identity is revealed, bringing his Super Hero responsibilities into conflict with his normal life and putting those he cares about most at risk. For the first time in the cinematic history of Spider-Man, our friendly neighborhood hero's identity is revealed, bringing his Super Hero responsibilities into conflict with his normal life and putting those he cares about most at risk. For the first time in the cinematic history of Spider-Man, our friendly neighborhood hero's identity is revealed, bringing his Super Hero responsibilities into conflict with his normal life and putting those he cares about most at risk.",
-                        style: TextStyle(
-                          color: Colors.white,
-                          height: 1.7,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
+                StoryLineSectionView(),
+                SizedBox(height: 30),
+                CastAndCrewSectionView(),
+                SizedBox(height: 16),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class CastAndCrewSectionView extends StatelessWidget {
+  const CastAndCrewSectionView({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DetailPageTitleView(title: "Cast and Crew"),
+        ),
+        SizedBox(height: 4),
+        HorizontalCastListView(),
+      ],
+    );
+  }
+}
+
+class HorizontalCastListView extends StatelessWidget {
+  const HorizontalCastListView({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 80,
+      child: ListView.separated(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        itemCount: 10,
+        scrollDirection: Axis.horizontal,
+        itemBuilder: (context, index) {
+          return CastView();
+        },
+        separatorBuilder: (context, index) {
+          return SizedBox(width: 12);
+        },
+      ),
+    );
+  }
+}
+
+class StoryLineSectionView extends StatelessWidget {
+  const StoryLineSectionView({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DetailPageTitleView(title: "Story Line"),
+          SizedBox(height: 12),
+          Text(
+            "For the first time in the cinematic history of Spider-Man, our friendly neighborhood hero's identity is revealed, bringing his Super Hero responsibilities into conflict with his normal life and putting those he cares about most at risk. For the first time in the cinematic history of Spider-Man, our friendly neighborhood hero's identity is revealed, bringing his Super Hero responsibilities into conflict with his normal life and putting those he cares about most at risk. For the first time in the cinematic history of Spider-Man, our friendly neighborhood hero's identity is revealed, bringing his Super Hero responsibilities into conflict with his normal life and putting those he cares about most at risk.",
+            style: TextStyle(
+              color: Colors.white,
+              height: 1.7,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DetailPageTitleView extends StatelessWidget {
+  final String title;
+
+  DetailPageTitleView({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+        fontSize: 20,
       ),
     );
   }

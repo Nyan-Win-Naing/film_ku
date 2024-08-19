@@ -11,6 +11,7 @@ class MovieDetailSliverAppBarView extends StatelessWidget {
     return SliverAppBar(
       automaticallyImplyLeading: false,
       expandedHeight: 360,
+      backgroundColor: kDetailPageBackgroundColor,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           children: [
