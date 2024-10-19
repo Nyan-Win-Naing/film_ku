@@ -1,9 +1,17 @@
 // Stateless
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:film_ku/blocs/banner_list/banner_list_bloc.dart';
+import 'package:film_ku/data/api/http_config.dart';
+import 'package:film_ku/data/boxes/banner_box.dart';
+import 'package:film_ku/data/boxes/recmmended_movies_box.dart';
+import 'package:film_ku/data/model/genre_model.dart';
+import 'package:film_ku/data/model/movie_model.dart';
+import 'package:film_ku/domain/usecases/movie_use_case.dart';
 import 'package:film_ku/pages/movie_detail_page.dart';
 import 'package:film_ku/resources/colors.dart';
-import 'package:film_ku/resources/dummy_data.dart';
 import 'package:film_ku/viewitems/movie_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class HomePage extends StatelessWidget {
@@ -11,33 +19,49 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        leading: Icon(
-          Icons.menu,
-        ),
-        title: Text(
-          "FilmKu",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
+    return BlocProvider(
+      create: (context) => BannerListBloc()..add(GetBannerList()),
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          leading: const Icon(
+            Icons.menu,
           ),
-        ),
-        actions: [
-          Icon(
-            Icons.notifications,
+          title: const Text(
+            "FilmKu",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            BannerSectionView(),
-            SizedBox(height: 16),
-            RecommendedForYouSectionView(),
-            SizedBox(height: 16),
-            MoviesByCategorySectionView(),
+          actions: const [
+            Icon(
+              Icons.notifications,
+            ),
           ],
+        ),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              BannerSectionView(),
+              const SizedBox(height: 16),
+              // RecommendedForYouSectionView(popularMovies: popularMovies ?? []),
+              // const SizedBox(height: 16),
+              // MoviesByCategorySectionView(
+              //   genreList: genreList ?? [],
+              //   moviesByGenre: moviesByGenre ?? [],
+              //   onTapGenre: (index) {
+              //     /// get movies by genre
+              //     List<GenreModel> genres = genreList ?? [];
+              //     int genreId = genres[index].id ?? 0;
+              //
+              //     movieUseCase.getMoviesByGenre(genreId).then((moviesByGenre) {
+              //       this.moviesByGenre = moviesByGenre;
+              //       setState(() {});
+              //     });
+              //   },
+              // ),
+            ],
+          ),
         ),
       ),
     );
@@ -45,8 +69,14 @@ class HomePage extends StatelessWidget {
 }
 
 class MoviesByCategorySectionView extends StatelessWidget {
-  const MoviesByCategorySectionView({
-    super.key,
+  final List<GenreModel> genreList;
+  final List<MovieModel> moviesByGenre;
+  final Function(int) onTapGenre;
+
+  MoviesByCategorySectionView({
+    required this.genreList,
+    required this.moviesByGenre,
+    required this.onTapGenre,
   });
 
   @override
@@ -54,33 +84,47 @@ class MoviesByCategorySectionView extends StatelessWidget {
     return Column(
       children: [
         TitleView(title: "Categories"),
-        SizedBox(height: 16),
-        CategoryTabBarView(),
-        SizedBox(height: 16),
-        HorizontalMovieListView(),
+        const SizedBox(height: 16),
+        CategoryTabBarView(
+          genreList: genreList,
+          onTapGenre: (index) {
+            onTapGenre(index);
+          },
+        ),
+        const SizedBox(height: 16),
+        HorizontalMovieListView(
+          movies: moviesByGenre,
+        ),
       ],
     );
   }
 }
 
 class CategoryTabBarView extends StatelessWidget {
-  const CategoryTabBarView({
-    super.key,
+  final List<GenreModel> genreList;
+  final Function(int) onTapGenre;
+
+  CategoryTabBarView({
+    required this.genreList,
+    required this.onTapGenre,
   });
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 10,
+      length: genreList.length,
       child: TabBar(
         isScrollable: true,
         dividerHeight: 0,
         indicatorColor: kHighlightColor,
         tabAlignment: TabAlignment.start,
         labelColor: kHighlightColor,
-        tabs: categoryList.map((String category) {
+        onTap: (int index) {
+          onTapGenre(index);
+        },
+        tabs: genreList.map((genre) {
           return Tab(
-            child: Text(category),
+            text: genre.name ?? "",
           );
         }).toList(),
       ),
@@ -89,49 +133,51 @@ class CategoryTabBarView extends StatelessWidget {
 }
 
 class RecommendedForYouSectionView extends StatelessWidget {
-  const RecommendedForYouSectionView({
-    super.key,
-  });
+  final List<MovieModel> popularMovies;
+
+  RecommendedForYouSectionView({required this.popularMovies});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         TitleView(title: "Recommended for you"),
-        SizedBox(height: 16),
-        HorizontalMovieListView(),
+        const SizedBox(height: 16),
+        HorizontalMovieListView(movies: popularMovies),
       ],
     );
   }
 }
 
 class HorizontalMovieListView extends StatelessWidget {
-  const HorizontalMovieListView({
-    super.key,
-  });
+  final List<MovieModel> movies;
+
+  HorizontalMovieListView({required this.movies});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 300,
       child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
-        itemCount: 10,
+        itemCount: movies.length,
         itemBuilder: (context, index) {
           return MovieView(
-            onTap: () {
+            movieModel: movies[index],
+            onTapMovie: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => MovieDetailPage(),
+                  builder: (context) =>
+                      MovieDetailPage(movieId: movies[index].id ?? 0),
                 ),
               );
             },
           );
         },
         separatorBuilder: (context, index) {
-          return SizedBox(width: 16);
+          return const SizedBox(width: 16);
         },
       ),
     );
@@ -152,13 +198,13 @@ class TitleView extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.black,
               fontWeight: FontWeight.w600,
               fontSize: 16,
             ),
           ),
-          Text(
+          const Text(
             "See All",
             style: TextStyle(
               color: kHighlightColor,
@@ -173,10 +219,6 @@ class TitleView extends StatelessWidget {
 }
 
 class BannerSectionView extends StatefulWidget {
-  const BannerSectionView({
-    super.key,
-  });
-
   @override
   State<BannerSectionView> createState() => _BannerSectionViewState();
 }
@@ -186,54 +228,84 @@ class _BannerSectionViewState extends State<BannerSectionView> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          height: MediaQuery.of(context).size.height * 1 / 3,
-          child: PageView(
-            onPageChanged: (int pageIndex) {
-              setState(() {
-                currentIndex = pageIndex;
-              });
-              print("Current Index =====> $currentIndex");
-            },
-            children: [
-              BannerImageView(),
-              BannerImageView(),
-              BannerImageView(),
-              BannerImageView(),
-            ],
-          ),
-        ),
-        SizedBox(height: 12),
+    return BlocBuilder<BannerListBloc, BannerListState>(
+      builder: (context, state) {
+        /// loading
+        if (state.bannerListStatus == BannerListStatus.loading) {
+          return Container(
+            width: double.infinity,
+            height: MediaQuery.of(context).size.height * 1 / 3,
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
-        /// Page Indicator
-        AnimatedSmoothIndicator(
-          activeIndex: currentIndex,
-          count: 4,
-          effect: ExpandingDotsEffect(
-            dotHeight: 10,
-            dotWidth: 10,
-            activeDotColor: Color.fromRGBO(21, 205, 218, 1.0),
+        /// success
+        if (state.bannerListStatus == BannerListStatus.success) {
+          return Column(
+            children: [
+              Container(
+                height: MediaQuery.of(context).size.height * 1 / 3,
+                child: PageView(
+                  onPageChanged: (int pageIndex) {
+                    setState(() {
+                      currentIndex = pageIndex;
+                    });
+                    print("Current Index =====> $currentIndex");
+                  },
+                  children: state.movieList?.map((movieModel) {
+                    return BannerImageView(movieModel: movieModel);
+                  }).toList() ?? [],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              /// Page Indicator
+              Visibility(
+                visible: state.movieList?.isNotEmpty ?? false,
+                child: AnimatedSmoothIndicator(
+                  activeIndex: currentIndex,
+                  count: state.movieList?.length ?? 0,
+                  effect: const ExpandingDotsEffect(
+                    dotHeight: 10,
+                    dotWidth: 10,
+                    activeDotColor: Color.fromRGBO(21, 205, 218, 1.0),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+
+        /// error
+        return Container(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height * 1 / 3,
+          child: Center(
+            child: Text(
+              state.error ?? "",
+            ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
 
 class BannerImageView extends StatelessWidget {
-  const BannerImageView({
-    super.key,
-  });
+  final MovieModel? movieModel;
+
+  BannerImageView({required this.movieModel});
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         Positioned.fill(
-          child: Image.network(
-            "https://thanhnien.mediacdn.vn/Uploaded/dotuan/2022_11_10/1-5451.jpg",
+          child: CachedNetworkImage(
+            imageUrl:
+                "${HttpConfig.imageBaseUrl}${movieModel?.backdropPath ?? ""}",
             fit: BoxFit.cover,
           ),
         ),
@@ -249,17 +321,17 @@ class BannerImageView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Black Panther: Wakanda Forever",
-                  style: TextStyle(
+                  movieModel?.title ?? "",
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  "On March 2, 2022",
-                  style: TextStyle(
+                  "On ${movieModel?.releaseDate}",
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Colors.white,
                   ),

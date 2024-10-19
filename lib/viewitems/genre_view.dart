@@ -1,8 +1,11 @@
+import 'package:film_ku/data/model/genre_model.dart';
 import 'package:film_ku/resources/colors.dart';
 import 'package:flutter/material.dart';
 
 class GenreView extends StatelessWidget {
-  const GenreView({super.key});
+  final GenreModel? genre;
+
+  GenreView({required this.genre});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +19,7 @@ class GenreView extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        "2 Trailers",
+        genre?.name ?? "",
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w600,

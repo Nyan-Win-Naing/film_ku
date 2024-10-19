@@ -1,11 +1,47 @@
+import 'package:film_ku/data/boxes/movie_detail_box.dart';
+import 'package:film_ku/data/model/genre_model.dart';
+import 'package:film_ku/data/model/movie_model.dart';
+import 'package:film_ku/domain/usecases/movie_use_case.dart';
 import 'package:film_ku/resources/colors.dart';
 import 'package:film_ku/viewitems/cast_view.dart';
 import 'package:film_ku/viewitems/genre_view.dart';
 import 'package:film_ku/widgets/movie_detail_sliver_app_bar_view.dart';
 import 'package:flutter/material.dart';
 
-class MovieDetailPage extends StatelessWidget {
-  const MovieDetailPage({super.key});
+class MovieDetailPage extends StatefulWidget {
+  final int movieId;
+
+  MovieDetailPage({required this.movieId});
+
+  @override
+  State<MovieDetailPage> createState() => _MovieDetailPageState();
+}
+
+class _MovieDetailPageState extends State<MovieDetailPage> {
+  /// Use Case
+  MovieUseCase movieUseCase = MovieUseCase();
+
+  /// Boxes
+  MovieDetailBox movieDetailBox = MovieDetailBox();
+
+  /// States
+  MovieModel? movieDetail;
+
+  @override
+  void initState() {
+    /// Get Movie Detail From Database
+    movieDetail = movieDetailBox.getMovieById(widget.movieId);
+    setState(() {});
+
+    /// Get Movie Detail From API
+    movieUseCase.getMovieDetail(widget.movieId).then((movieDetail) {
+      movieDetailBox.saveSingleMovie(movieDetail);
+      this.movieDetail = movieDetail;
+      setState(() {});
+    });
+
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,19 +52,22 @@ class MovieDetailPage extends StatelessWidget {
       ),
       body: CustomScrollView(
         slivers: [
-          MovieDetailSliverAppBarView(),
+          MovieDetailSliverAppBarView(
+            movieDetail: movieDetail,
+          ),
           SliverList(
             delegate: SliverChildListDelegate(
               [
-                SizedBox(height: 16),
-                MovieActionSectionView(),
-                SizedBox(height: 24),
-                GenreAndDurationSectionView(),
-                SizedBox(height: 30),
-                StoryLineSectionView(),
-                SizedBox(height: 30),
-                CastAndCrewSectionView(),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
+                const MovieActionSectionView(),
+                const SizedBox(height: 24),
+                GenreAndDurationSectionView(
+                    genreList: movieDetail?.genreList ?? []),
+                const SizedBox(height: 30),
+                StoryLineSectionView(storyLine: movieDetail?.overview ?? ""),
+                const SizedBox(height: 30),
+                const CastAndCrewSectionView(),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -52,8 +91,8 @@ class CastAndCrewSectionView extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: DetailPageTitleView(title: "Cast and Crew"),
         ),
-        SizedBox(height: 4),
-        HorizontalCastListView(),
+        const SizedBox(height: 4),
+        const HorizontalCastListView(),
       ],
     );
   }
@@ -69,41 +108,89 @@ class HorizontalCastListView extends StatelessWidget {
     return Container(
       height: 80,
       child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: 10,
         scrollDirection: Axis.horizontal,
         itemBuilder: (context, index) {
-          return CastView();
+          return const CastView();
         },
         separatorBuilder: (context, index) {
-          return SizedBox(width: 12);
+          return const SizedBox(width: 12);
         },
       ),
     );
   }
 }
 
-class StoryLineSectionView extends StatelessWidget {
-  const StoryLineSectionView({
-    super.key,
-  });
+class StoryLineSectionView extends StatefulWidget {
+  final String storyLine;
+
+  StoryLineSectionView({required this.storyLine});
+
+  @override
+  State<StoryLineSectionView> createState() => _StoryLineSectionViewState();
+}
+
+class _StoryLineSectionViewState extends State<StoryLineSectionView> {
+  bool isTextExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           DetailPageTitleView(title: "Story Line"),
-          SizedBox(height: 12),
-          Text(
-            "For the first time in the cinematic history of Spider-Man, our friendly neighborhood hero's identity is revealed, bringing his Super Hero responsibilities into conflict with his normal life and putting those he cares about most at risk. For the first time in the cinematic history of Spider-Man, our friendly neighborhood hero's identity is revealed, bringing his Super Hero responsibilities into conflict with his normal life and putting those he cares about most at risk. For the first time in the cinematic history of Spider-Man, our friendly neighborhood hero's identity is revealed, bringing his Super Hero responsibilities into conflict with his normal life and putting those he cares about most at risk.",
-            style: TextStyle(
-              color: Colors.white,
-              height: 1.7,
-            ),
-          ),
+          const SizedBox(height: 12),
+          // Text(
+          //   storyLine.substring(0, 200),
+          //   style: TextStyle(
+          //     color: Colors.white,
+          //     height: 1.7,
+          //   ),
+          // ),
+
+          widget.storyLine.isEmpty
+              ? const SizedBox.shrink()
+              : widget.storyLine.length < 200
+                  ? Text(
+                      widget.storyLine,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Colors.white,
+                        height: 1.7,
+                      ),
+                    )
+                  : InkWell(
+                      onTap: () {
+                        isTextExpanded = !isTextExpanded;
+                        setState(() {});
+                      },
+                      child: RichText(
+                        text: TextSpan(
+                          text: !isTextExpanded
+                              ? widget.storyLine.substring(0, 200)
+                              : widget.storyLine,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Colors.white,
+                            height: 1.7,
+                          ),
+                          children: [
+                            TextSpan(
+                              text:
+                                  !isTextExpanded ? "... See More" : "See Less",
+                              style: const TextStyle(
+                                color: kHighlightColor,
+                                decoration: TextDecoration.underline,
+                                decorationColor: kHighlightColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
         ],
       ),
     );
@@ -119,7 +206,7 @@ class DetailPageTitleView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: TextStyle(
+      style: const TextStyle(
         color: Colors.white,
         fontWeight: FontWeight.bold,
         fontSize: 20,
@@ -129,9 +216,9 @@ class DetailPageTitleView extends StatelessWidget {
 }
 
 class GenreAndDurationSectionView extends StatelessWidget {
-  const GenreAndDurationSectionView({
-    super.key,
-  });
+  final List<GenreModel> genreList;
+
+  GenreAndDurationSectionView({required this.genreList});
 
   @override
   Widget build(BuildContext context) {
@@ -148,12 +235,12 @@ class GenreAndDurationSectionView extends StatelessWidget {
               runSpacing: 8,
 
               /// vertical
-              children: List.generate(5, (index) {
-                return GenreView();
-              }),
+              children: genreList.map((genreModel) {
+                return GenreView(genre: genreModel);
+              }).toList(),
             ),
           ),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
           IconAndLabelView(
             iconData: Icons.access_time_rounded,
             label: "2h 13m",
@@ -175,13 +262,13 @@ class MovieActionSectionView extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        PlayButtonView(),
-        SizedBox(width: 12),
+        const PlayButtonView(),
+        const SizedBox(width: 12),
         DownloadButtonView(
           iconColor: kOrangeColor,
           iconData: Icons.download_rounded,
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 12),
         DownloadButtonView(
           iconColor: kHighlightColor,
           iconData: Icons.ios_share_outlined,
@@ -203,8 +290,8 @@ class DownloadButtonView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      decoration: const BoxDecoration(
         color: kDownloadButtonBackgroundColor,
         shape: BoxShape.circle,
       ),
@@ -230,12 +317,12 @@ class PlayButtonView extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: 24,
           vertical: 12,
         ),
       ),
-      child: Row(
+      child: const Row(
         children: [
           Icon(
             Icons.play_arrow,

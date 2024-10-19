@@ -1,10 +1,13 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:film_ku/data/api/http_config.dart';
+import 'package:film_ku/data/model/movie_model.dart';
 import 'package:film_ku/resources/colors.dart';
 import 'package:flutter/material.dart';
 
 class MovieDetailSliverAppBarView extends StatelessWidget {
-  const MovieDetailSliverAppBarView({
-    super.key,
-  });
+  final MovieModel? movieDetail;
+
+  MovieDetailSliverAppBarView({required this.movieDetail});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +18,9 @@ class MovieDetailSliverAppBarView extends StatelessWidget {
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           children: [
-            MovieBackgroundImageView(),
+            MovieBackgroundImageView(
+              imageUrl: movieDetail?.backdropPath ?? "",
+            ),
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -35,13 +40,17 @@ class MovieDetailSliverAppBarView extends StatelessWidget {
                 // color: Colors.blue,
                 child: Column(
                   children: [
-                    AppBarWithBackButtonView(),
+                    AppBarWithBackButtonView(title: movieDetail?.title ?? ""),
                     SizedBox(height: 16),
-                    MoviePosterView(),
+                    MoviePosterView(
+                      imageUrl: movieDetail?.backdropPath ?? "",
+                    ),
                     SizedBox(height: 16),
-                    MovieInfoView(),
+                    MovieInfoView(movieModel: movieDetail),
                     SizedBox(height: 16),
-                    RatingView(),
+                    RatingView(
+                      rating: movieDetail?.rating ?? "",
+                    ),
                   ],
                 ),
               ),
@@ -54,9 +63,9 @@ class MovieDetailSliverAppBarView extends StatelessWidget {
 }
 
 class RatingView extends StatelessWidget {
-  const RatingView({
-    super.key,
-  });
+  final String rating;
+
+  RatingView({required this.rating});
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +73,7 @@ class RatingView extends StatelessWidget {
       alignment: Alignment.center,
       child: IconAndLabelView(
         iconData: Icons.star,
-        label: "4.5",
+        label: rating,
         color: kOrangeColor,
       ),
     );
@@ -72,9 +81,9 @@ class RatingView extends StatelessWidget {
 }
 
 class MovieInfoView extends StatelessWidget {
-  const MovieInfoView({
-    super.key,
-  });
+  final MovieModel? movieModel;
+
+  MovieInfoView({required this.movieModel});
 
   @override
   Widget build(BuildContext context) {
@@ -83,17 +92,17 @@ class MovieInfoView extends StatelessWidget {
       children: [
         IconAndLabelView(
           iconData: Icons.calendar_month,
-          label: "2021",
+          label: movieModel?.releaseYear ?? "",
         ),
         DividerView(),
         IconAndLabelView(
           iconData: Icons.access_time_filled_rounded,
-          label: "148 Minutes",
+          label: "${movieModel?.runtime} Minutes",
         ),
         DividerView(),
         IconAndLabelView(
           iconData: Icons.local_movies,
-          label: "Action",
+          label: movieModel?.firstGenre ?? "",
         ),
       ],
     );
@@ -154,40 +163,84 @@ class IconAndLabelView extends StatelessWidget {
 }
 
 class MoviePosterView extends StatelessWidget {
-  const MoviePosterView({
-    super.key,
-  });
+  final String imageUrl;
+
+  MoviePosterView({required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 150,
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        image: DecorationImage(
-          fit: BoxFit.cover,
-          image: NetworkImage(
-            "https://m.media-amazon.com/images/I/91caiCtMJfL.jpg",
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 4,
-            spreadRadius: 2,
-            offset: Offset(1, 4),
-          ),
-        ],
-      ),
-    );
+    return imageUrl.isEmpty
+        ? Container(
+            width: 150,
+            height: 200,
+            child: Center(
+              child: CircularProgressIndicator(color: kHighlightColor),
+            ),
+          )
+        : CachedNetworkImage(
+            imageUrl: "${HttpConfig.imageBaseUrl}$imageUrl",
+            width: 150,
+            height: 200,
+            imageBuilder: (context, imageProvider) {
+              return Container(
+                width: 150,
+                height: 200,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    fit: BoxFit.cover,
+                    image: imageProvider,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.4),
+                      blurRadius: 4,
+                      spreadRadius: 2,
+                      offset: Offset(1, 4),
+                    ),
+                  ],
+                ),
+              );
+            },
+            progressIndicatorBuilder: (context, url, progress) {
+              return Center(
+                child: CircularProgressIndicator(color: kHighlightColor),
+              );
+            },
+            errorWidget: (context, url, error) {
+              return Center(
+                child: CircularProgressIndicator(color: kHighlightColor),
+              );
+            },
+          );
+    // return Container(
+    //   width: 150,
+    //   height: 200,
+    //   decoration: BoxDecoration(
+    //     borderRadius: BorderRadius.circular(8),
+    //     image: DecorationImage(
+    //       fit: BoxFit.cover,
+    //       image: CachedNetworkImageProvider(
+    //         imageUrl,
+    //       ),
+    //     ),
+    //     boxShadow: [
+    //       BoxShadow(
+    //         color: Colors.black.withOpacity(0.4),
+    //         blurRadius: 4,
+    //         spreadRadius: 2,
+    //         offset: Offset(1, 4),
+    //       ),
+    //     ],
+    //   ),
+    // );
   }
 }
 
 class AppBarWithBackButtonView extends StatelessWidget {
-  const AppBarWithBackButtonView({
-    super.key,
-  });
+  final String title;
+
+  AppBarWithBackButtonView({required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +257,7 @@ class AppBarWithBackButtonView extends StatelessWidget {
           SizedBox(width: 16),
           Expanded(
             child: Text(
-              "Spider Man No Way Home",
+              title,
               textAlign: TextAlign.center,
               maxLines: 1,
               style: TextStyle(
@@ -250,17 +303,35 @@ class AppBarIconView extends StatelessWidget {
 }
 
 class MovieBackgroundImageView extends StatelessWidget {
-  const MovieBackgroundImageView({
-    super.key,
-  });
+  final String imageUrl;
+
+  MovieBackgroundImageView({required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
+    print("Image URL is ====> $imageUrl");
     return Positioned.fill(
-      child: Image.network(
-        "https://m.media-amazon.com/images/I/91caiCtMJfL.jpg",
-        fit: BoxFit.cover,
-      ),
+      /// tenary operator
+      child: imageUrl.isEmpty
+          ? Center(
+              child: CircularProgressIndicator(
+                color: kHighlightColor,
+              ),
+            )
+          : CachedNetworkImage(
+              imageUrl: "${HttpConfig.imageBaseUrl}$imageUrl",
+              fit: BoxFit.cover,
+              progressIndicatorBuilder: (context, url, progress) {
+                return Center(
+                  child: CircularProgressIndicator(color: kHighlightColor),
+                );
+              },
+              errorWidget: (context, url, error) {
+                return Center(
+                  child: CircularProgressIndicator(color: kHighlightColor),
+                );
+              },
+            ),
     );
   }
 }
